@@ -1,0 +1,161 @@
+.kikimimi-dashboard {
+  padding: 16px 20px;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  color: #e6e6e6;
+  font-family: sans-serif;
+}
+
+.kikimimi-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.kikimimi-subtitle {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #aaa;
+}
+
+.kikimimi-banner {
+  background: #4a3b0a;
+  color: #f1c40f;
+  border: 1px solid #f1c40f;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.kikimimi-lad-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.kikimimi-stat-card {
+  background: #2a2a2a;
+  border-radius: 6px;
+  padding: 10px 16px;
+  min-width: 160px;
+  flex: 1 1 160px;
+}
+
+.kikimimi-stat-card-warn {
+  background: #4a1f1f;
+  box-shadow: 0 0 0 1px #e74c3c inset;
+}
+
+.kikimimi-stat-label {
+  font-size: 11px;
+  color: #999;
+}
+
+.kikimimi-stat-value {
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.kikimimi-panel {
+  background: #202020;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.kikimimi-panel-title {
+  font-size: 14px;
+  margin: 0 0 8px;
+  color: #ccc;
+}
+
+.kikimimi-plot-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.kikimimi-plot-grid {
+  stroke: #444;
+  stroke-width: 1;
+}
+
+.kikimimi-plot-axis-label {
+  fill: #888;
+  font-size: 9px;
+}
+
+.kikimimi-plot-threshold {
+  stroke: #9b59b6;
+  stroke-width: 1;
+  stroke-dasharray: 4, 3;
+}
+
+.kikimimi-plot-threshold-label {
+  fill: #9b59b6;
+  font-size: 9px;
+}
+
+.kikimimi-plot-line {
+  fill: none;
+  stroke: #3498db;
+  stroke-width: 2;
+}
+
+.kikimimi-plot-point {
+  fill: #3498db;
+}
+
+.kikimimi-plot-point-over {
+  fill: #e74c3c;
+}
+
+.kikimimi-table-wrap {
+  overflow-x: auto;
+}
+
+.kikimimi-highlight {
+  color: #f1c40f;
+  font-weight: bold;
+}
+
+.kikimimi-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+
+.kikimimi-table th,
+.kikimimi-table td {
+  border-bottom: 1px solid #333;
+  padding: 6px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.kikimimi-table td:last-child,
+.kikimimi-table th:last-child {
+  white-space: normal;
+  min-width: 240px;
+}
+
+.kikimimi-table th {
+  color: #999;
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.kikimimi-caption {
+  color: #888;
+  font-size: 12px;
+}
+
+.kikimimi-footer {
+  color: #666;
+  font-size: 11px;
+  margin-top: 8px;
+}
