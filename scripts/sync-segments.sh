@@ -13,6 +13,22 @@
 # (RAM) usage there. This script only copies forward and transcribes.
 set -euo pipefail
 
+# launchd/cron run with a minimal, non-login environment: no .zshrc, no
+# Homebrew on PATH (the same gotcha as the non-interactive-SSH one hit
+# during setup -- see documents/decisions/0011-transcription-moves-to-macmini-role.md).
+# Make this script self-sufficient regardless of who invokes it.
+export PATH="/opt/homebrew/bin:$HOME/.local/bin:$PATH"
+
+# `just` normally loads .env for us (set dotenv-load), but launchd/cron call
+# this script directly, so load it here too if it hasn't been already.
+KIKIMIMI_ENV_FILE="${KIKIMIMI_ENV_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env}"
+if [ -z "${KIKIMIMI_RPI_HOST:-}" ] && [ -f "$KIKIMIMI_ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$KIKIMIMI_ENV_FILE"
+  set +a
+fi
+
 : "${KIKIMIMI_RPI_HOST:?set in .env}"
 : "${KIKIMIMI_RPI_AUDIO_DIR:?set in .env}"
 KIKIMIMI_RPI_USER="${KIKIMIMI_RPI_USER:-pi}"

@@ -150,6 +150,53 @@ window内であれば単に次のrsyncで拾われるだけで、二重の状態
   同じ問題が`Justfile`の`ssh`レシピにも(未使用のまま)潜んでいたため、
   あわせて修正した
 
+## 常駐登録(2026-09-19、ユーザーの明示的な依頼を受けて実施)
+
+`scripts/install-sync-timer.sh`を追加し、`scripts/sync-segments.sh`を
+作業用Macのlaunchd LaunchAgent(`com.dwg7.kikimimi.sync-segments`、
+60秒間隔の`StartInterval`、ログは`~/Library/Logs/kikimimi/sync-segments.log`)
+として登録した。LaunchDaemonではなくLaunchAgentを選んだのは、
+ログインユーザーのSSH鍵にアクセスできる必要があるため(rsync/sshの
+実行に必要)。
+
+実機で60秒間隔の連続実行を確認済み(23:55:32→23:56:32→23:57:33の
+3回、いずれも正常終了)。`speechmap transcribe`の冪等性により、
+新着セグメントが無いtickは「nothing to do」で軽く完了することも確認した。
+
+登録時に2点、launchd/cronの非対話・非ログイン環境向けの修正を
+`scripts/sync-segments.sh`に追加した:
+
+- **PATHの補強**: launchd/cronはHomebrewや`uv`のパスを含まない最小限の
+  PATHで起動するため、スクリプト冒頭で明示的に`/opt/homebrew/bin`・
+  `$HOME/.local/bin`を追加するようにした(非対話SSHでbrewが見つからな
+  かった、という[ADR 0011](0011-transcription-moves-to-macmini-role.md)
+  の教訓と同じパターン)
+- **`.env`の自動読み込み**: `just`経由なら`set dotenv-load`で自動的に
+  読まれるが、launchd/cronから直接呼ばれる場合はそうならないため、
+  スクリプト自身が`.env`が未読み込みなら読み込むようにした
+
+## RPi側の常駐化(2026-09-20、ユーザーの明示的な依頼を受けて実施)
+
+「しばらくデータを貯めてからOpen MCT実装を考える」という方針を受けて、
+録音側(RPi)も同様にsystemdサービス化した——さもないと、そもそも
+貯まるデータが無い。`scripts/install-record-service.sh`を追加し、
+RPi実機に`kikimimi-record.service`(system-level、`User=hfu`、
+`Restart=on-failure`)として登録した。`systemctl --user`ではなく
+system-levelのunitを選んだのは、ログインセッションの維持
+(`loginctl enable-linger`)を必要とせず、再起動後も自動起動するため。
+
+周波数・ゲイン・局ラベル・segment-sec・retention設定は、暫定値のまま
+`.env`(`KIKIMIMI_FREQ`等)から注入できるようにした——対象局・周波数は
+[CLAUDE.md](../../CLAUDE.md)6節にある通りまだ正式決定していないため、
+後で変えるときにスクリプトを書き換えずに済むようにする狙い。
+
+実機で確認: サービス起動直後から新しいセグメントが生成され、
+Mac側のlaunchd(`sync-segments`)が次のtick(60秒後)で自動的に
+rsync・文字起こしを実行することを確認した。**これで録音から
+文字起こしまでの経路全体が、人手を介さず継続稼働する状態になった**
+(レンズ判定・時系列異常検知はまだ——[ADR 0011](0011-transcription-moves-to-macmini-role.md)
+の通りMac mini役の機体のLLMエンドポイントが未構築のため)。
+
 ## 検討した代替案
 
 - **CIFS/SMB共有をマウントし、そこに直接録音する**: 却下。上記の通り、

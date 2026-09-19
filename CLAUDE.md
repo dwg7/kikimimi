@@ -435,9 +435,25 @@ dwg7/kikimimi/
       rsync pull→`speechmap transcribe --skip-newest`を実行する方式。
       CIFS/SMB共有は録音プロセスの堅牢性を落とすため見送った。
       実機で録音→転送→文字起こしの一連を確認済み(NHK-FM北海道の実放送、
-      ジャズ番組を正しく転写)([ADR 0012](documents/decisions/0012-rsync-pull-over-tmpfs.md))。
-      **同期を定期実行するcron/launchdへの登録(常駐化)はまだ。人間の
-      確認を経てから**
+      ジャズ番組を正しく転写)([ADR 0012](documents/decisions/0012-rsync-pull-over-tmpfs.md))
+- [x] 同期の定期実行(常駐化)完了(2026-09-19、ユーザーの明示的な依頼を
+      受けて実施)。`scripts/install-sync-timer.sh`で作業用Macに
+      launchd LaunchAgent(60秒間隔)として登録。実機で60秒間隔の
+      連続実行(3回)を確認済み。ログは`~/Library/Logs/kikimimi/`
+      ([ADR 0012](documents/decisions/0012-rsync-pull-over-tmpfs.md)
+      「常駐登録」節)
+- [x] RPi側の録音(`speechmap record`)もsystemdサービス化(2026-09-20、
+      ユーザーの明示的な依頼を受けて実施)。「しばらくデータを貯めてから
+      Open MCT実装を考える」方針のため、録音自体を継続稼働させる必要が
+      あった。`scripts/install-record-service.sh`で`kikimimi-record.service`
+      として登録(`Restart=on-failure`、再起動後も自動起動)。**これで
+      録音→転送→文字起こしの経路全体が人手を介さず継続稼働する状態に
+      なった。** 周波数(85.2MHz NHK-FM北海道)・ゲイン等は`.env`経由の
+      暫定値のまま(正式決定はまだ)
+      ([ADR 0012](documents/decisions/0012-rsync-pull-over-tmpfs.md)
+      「RPi側の常駐化」節)。**次はしばらく蓄積を見守り、Open MCTの
+      実データ変換の設計はデータが貯まってから着手する方針(2026-09-20、
+      ユーザー確認)**
 - [ ] 十勝岳関連の実ニュース音声での固有名詞転記精度の確認(これまでの
       テストは全て一般的な会話音声のみ)
 - [ ] Mac mini役の機体側のLLMエンドポイント構築 — 物理作業

@@ -74,3 +74,50 @@ setup-macmini:
 # 前に、まず単発で動作確認すること。 documents/decisions/0012-rsync-pull-over-tmpfs.md 参照)
 sync-segments:
     ./scripts/sync-segments.sh
+
+# install-sync-timer: sync-segmentsをlaunchdに常駐登録する(Mac mini役の機体上で実行)
+install-sync-timer:
+    ./scripts/install-sync-timer.sh install
+
+# uninstall-sync-timer: launchdの常駐登録を解除する
+uninstall-sync-timer:
+    ./scripts/install-sync-timer.sh uninstall
+
+# sync-timer-status: 常駐登録の状態とログ末尾を表示する
+sync-timer-status:
+    ./scripts/install-sync-timer.sh status
+
+# install-record-service: RPi実機でspeechmap recordをsystemdサービス化する
+# (このJustfileはMac側で動かす前提なので、scripts/install-record-service.sh
+# 本体をssh越しに転送・実行する。周波数・ゲイン等は.envのKIKIMIMI_FREQ等を使用)
+install-record-service:
+    #!/usr/bin/env bash
+    set -e
+    : "${KIKIMIMI_RPI_HOST:?.envにKIKIMIMI_RPI_HOSTを設定してください}"
+    HOST="${KIKIMIMI_RPI_USER:-pi}@${KIKIMIMI_RPI_HOST%.local}.local"
+    ssh "$HOST" "env \
+      KIKIMIMI_RPI_AUDIO_DIR='${KIKIMIMI_RPI_AUDIO_DIR:-/mnt/kikimimi-audio}' \
+      KIKIMIMI_FREQ='${KIKIMIMI_FREQ:-85.2M}' \
+      KIKIMIMI_GAIN='${KIKIMIMI_GAIN:-40.2}' \
+      KIKIMIMI_DEVICE='${KIKIMIMI_DEVICE:-0}' \
+      KIKIMIMI_LABEL='${KIKIMIMI_LABEL:-NHKFM}' \
+      KIKIMIMI_SEGMENT_SEC='${KIKIMIMI_SEGMENT_SEC:-60}' \
+      KIKIMIMI_RETENTION_HOURS='${KIKIMIMI_RETENTION_HOURS:-12}' \
+      KIKIMIMI_MAX_GB='${KIKIMIMI_MAX_GB:-0.8}' \
+      bash -s install" < scripts/install-record-service.sh
+
+# uninstall-record-service: RPi実機のspeechmap recordサービスを停止・削除する
+uninstall-record-service:
+    #!/usr/bin/env bash
+    set -e
+    : "${KIKIMIMI_RPI_HOST:?.envにKIKIMIMI_RPI_HOSTを設定してください}"
+    HOST="${KIKIMIMI_RPI_USER:-pi}@${KIKIMIMI_RPI_HOST%.local}.local"
+    ssh "$HOST" "bash -s uninstall" < scripts/install-record-service.sh
+
+# record-service-status: RPi実機のspeechmap recordサービスの状態を表示する
+record-service-status:
+    #!/usr/bin/env bash
+    set -e
+    : "${KIKIMIMI_RPI_HOST:?.envにKIKIMIMI_RPI_HOSTを設定してください}"
+    HOST="${KIKIMIMI_RPI_USER:-pi}@${KIKIMIMI_RPI_HOST%.local}.local"
+    ssh "$HOST" "bash -s status" < scripts/install-record-service.sh
