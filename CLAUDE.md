@@ -119,26 +119,32 @@ Nominatimのインポート要件(NVMe、大きなRAM)を一切気にせず、
 [documents/decisions/0002-omit-nominatim-grounding.md](documents/decisions/0002-omit-nominatim-grounding.md)
 と`scripts/locitorium-stub.sh`。
 
-### ハードウェア構成:RPi 4B + Mac mini の役割分担
+### ハードウェア構成:RPi 4B + Mac mini役の機体の役割分担
 
 台数を増やして並列化する発想ではなく、**役割ごとに専任機を分ける**。
 
 ```
 RPi 4B (RTL-SDR接続)
-  → whisper.cpp で文字起こし(tiny/baseモデル、実時間より速く動作)
-  → テキストを Mac mini の LLM エンドポイントに送信
-Mac mini
+  → speechmap record のみ(録音)。文字起こしはしない
+  → セグメントファイルを Mac mini役の機体へ転送
+Mac mini役の機体(Apple Silicon)
+  → whisper.cpp(Metal backend)で文字起こし
   → LLM(レンズ判定): 十勝岳関連か、緊急度、文脈を分類
   → series(時系列・異常検知、detempus)
   → GeoJSON/出力生成 → Open MCT
 ```
 
-- whisper.cppはRPi 4Bで十分にこなせる(ARM NEON最適化、tiny/baseモデルで
-  実時間より速い、という実測報告あり)
+- **当初はwhisper.cppをRPi 4B側で動かす想定だったが、実測(ADR 0010)で
+  RPiの発熱・速度双方に無視できない制約が見つかったため、文字起こしを
+  Mac mini役の機体へ移す方向に見直した**([ADR 0011](documents/decisions/0011-transcription-moves-to-macmini-role.md))。
+  RPi 4Bの役割は録音(`speechmap record`)のみに軽量化されている
 - LLMエンドポイントはRPi単体では非現実的(小型量子化モデルでも遅い)。
-  Mac miniのApple Silicon(統合メモリ)の方がローカルLLM推論に適する
-- 既に購入済みのRTL-SDR Blog V4 R828D をRPi 4Bに接続する想定
-- 詳細は[documents/decisions/0003-hardware-split-rpi-macmini.md](documents/decisions/0003-hardware-split-rpi-macmini.md)
+  Mac mini役の機体のApple Silicon(統合メモリ、Metal backend)の方が
+  ローカル推論(LLM・whisper.cpp双方)に適する
+- 既に購入済みのRTL-SDR Blog V4 R828D をRPi 4Bに接続済み
+- 詳細は[documents/decisions/0003-hardware-split-rpi-macmini.md](documents/decisions/0003-hardware-split-rpi-macmini.md)(初期判断)・
+  [documents/decisions/0010-whisper-model-benchmark.md](documents/decisions/0010-whisper-model-benchmark.md)(RPi実測)・
+  [documents/decisions/0011-transcription-moves-to-macmini-role.md](documents/decisions/0011-transcription-moves-to-macmini-role.md)(見直し後の構成)
 
 ---
 
@@ -358,5 +364,73 @@ dwg7/kikimimi/
 - [ ] 実データへの接続(`speechmap series`のseries.json、`selected.jsonl`を
       `openmct/data/`が読む形に整形する変換ステップ。現状はプレビュー用
       ダミーデータ`preview-fixture.json`)
-- [ ] RPi 4B側のセットアップ(RTL-SDR接続、whisper.cpp導入) — 物理作業
-- [ ] Mac mini側のLLMエンドポイント構築 — 物理作業
+- [x] RPi 4BのOS・タスクランナーの選定(Raspberry Pi OS Lite 64-bit Trixie
+      + cloud-init、`just`)。kaga0の実績に準拠、rpi-geoserver0とはUnit Aの
+      イメージバックアップ/一時転用について協調中
+      ([ADR 0009](documents/decisions/0009-rpi-os-trixie-cloudinit-just.md))
+- [x] `just flash-sdcard`/`just backup-sdcard`/`just restore-sdcard`/
+      `just configure-wifi`の実装(kaga0/rpi-geoserver0のスクリプトを移植。
+      rpi-geoserver0側の`backup-sdcard.sh`/`restore-sdcard.sh`は申告時点
+      [2026-09-17]で実機未検証のため、動作保証はまだない。実機での
+      切り替えは人間の確認待ち — [ADR 0009](documents/decisions/0009-rpi-os-trixie-cloudinit-just.md)「実装」節)
+- [x] RPi実機のSDカードにRaspberry Pi OS Lite (64-bit) Trixieを書き込み
+      (2026-09-19。rpi-geoserver0のバックアップをsha256で独立検証してから
+      実施。`rpi-imager`の`--cloudinit-userdata`系フラグが環境依存で
+      固まったため、最終的に`dd`直接書き込み+boot分区へのcloud-init
+      手動配置に切り替えた。詰まった点は
+      [ADR 0009](documents/decisions/0009-rpi-os-trixie-cloudinit-just.md)
+      「実機での書き込み」節に記録)。ホスト名・ユーザー名・SSH公開鍵・
+      Wi-Fi設定込み(個体固有の値は`.env`のみ、kaga0 ADR 0006の慣習を踏襲)。
+      **次はRPi 4Bへの挿入・起動・SSH疎通確認**
+- [x] RPi実機へのソフトウェア導入完了(2026-09-19)
+      — apt(ffmpeg・rtl-sdr・jq・curl・build-essential・cmake)、whisper.cpp
+      ビルド済み(`whisper-server`・`whisper-cli`)、OpenSpeechMap CLIを
+      uv導入済み。`speechmap check`で`record`/`transcribe`段階
+      (ffmpeg・rtl_fm・ffprobe・curl・jq)はすべてPATH上に確認。
+      `aiq`/`locitorium`/`detempus`が無いのは想定通り(設計上Mac mini役の
+      機体が担う)。**「Mac mini」役は、新規調達せず既存の手元のMacで
+      足りることが確定**(個体名は`.env`のみ)
+- [x] RTL-SDR Blog V4をRPi実機に接続、`rtl_test`で認識・動作確認
+      (2026-09-19。アンテナ未接続の状態で実施——受信専用機器なので
+      アンテナ無しでも本体を傷めるリスクは無いと判断した上で先に実施。
+      `RTLSDRBlog, Blog V4`・`Rafael Micro R828D`チューナーとして認識、
+      サンプルロス率100万分の5と良好。対応gain値0.0〜49.6の29段階を確認)
+- [x] アンテナ接続・実受信確認(2026-09-19)。ダイポールアンテナキットの
+      大きい方の素子(23cm〜1m)をNHK-FM北海道(85.2MHz)向けに約88cm
+      (1/4波長換算)へ調整、窓際へ移設。**`rtl_fm`は`-M fm`(狭帯域)ではなく
+      `-M wbfm`(広帯域、ディエンファシスフィルタ`-E deemp`込み)を使うべき、
+      という点が最初の録音で判明**(高域ノイズが目立った原因)。`-M wbfm`
+      切り替え後、クリアな番組音声を確認
+- [x] whisper.cppモデル(tiny/base)の実測比較(2026-09-19、実録音15.3秒で
+      実測)。**tinyは実時間の0.56倍(速い)、baseは1.22倍(実時間より
+      遅い)** — ADR 0003の「tiny/baseは実時間より速い」という想定は
+      半分だけ正しかった。文字起こし品質はbaseがやや優位。
+      [ADR 0010](documents/decisions/0010-whisper-model-benchmark.md)に
+      記録。baseは不採用の方向(ユーザー判断、2026-09-19)。tiny/small
+      どちらで行くかが残る論点
+- [x] tinyモデルで実パイプライン(`speechmap record`→`speechmap
+      transcribe`)を検証(2026-09-19)。60秒録音を22.6秒で処理(実時間比
+      0.38倍)、想定形式のJSONL出力を確認。非音声区間(音楽)を`(音楽)`
+      タグとして適切に扱えていた。[ADR 0010](documents/decisions/0010-whisper-model-benchmark.md)
+      「追記」節に記録
+- [x] smallモデルの実測、およびRPiの放熱問題の発見(2026-09-19)。
+      RPi実機でsmallは実時間の4.77倍と非現実的。tinyを5回連続実行しただけで
+      75.0℃→82.7℃、`vcgencmd get_throttled`が現在進行形のソフト温度制限
+      (`0x80008`)を検出。**発熱源はwhisper.cpp推論であり、録音自体では
+      ない**ことも確認([ADR 0010](documents/decisions/0010-whisper-model-benchmark.md)
+      「追記」節)
+- [x] Mac mini役の機体(既存の手元のMac)でXcode Command Line Toolsの
+      破損を修復し(`sudo rm -rf /Library/Developer/CommandLineTools &&
+      xcode-select --install`)、whisper.cppをMetal backend有効でビルド
+      (2026-09-19)。同一サンプルでsmall・mediumを実測: **small約0.04倍、
+      medium約0.15倍**——RPiのsmall(4.77倍)から100倍以上の高速化。
+      これを受けて文字起こしをRPiからMac mini役の機体へ移す決定を確定
+      ([ADR 0011](documents/decisions/0011-transcription-moves-to-macmini-role.md))。
+      モデルはmediumを暫定第一候補とする(最終確認は人間の判断待ち)。
+      真のストリーミング処理化は今回のスコープ外とし、OpenSpeechMapの
+      既存のセグメント単位パイプラインに従う方針(2026-09-19、ユーザー確認)
+- [ ] RPi→Mac mini役の機体へのセグメントファイル同期の仕組みの設計・実装
+      (rsync等。まだ着手していない)
+- [ ] 十勝岳関連の実ニュース音声での固有名詞転記精度の確認(これまでの
+      テストは全て一般的な会話音声のみ)
+- [ ] Mac mini役の機体側のLLMエンドポイント構築 — 物理作業

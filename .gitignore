@@ -1,0 +1,4 @@
+# Environment-specific values (RPi hostname, SSH key paths, etc.) — see
+# documents/decisions/0009-rpi-os-trixie-cloudinit-just.md and kaga0's
+# docs/decisions/0007-secrets-policy.md for why these stay out of git.
+.env

@@ -12,6 +12,9 @@
 | [0006](0006-docs-reserved-for-github-pages.md) | `docs/`はGitHub Pages用に予約し、ADR等は`documents/`に置く | Accepted (2026-09-16) |
 | [0007](0007-agents-md-deferred.md) | AGENTS.mdはtokachi-lens確定後に追加する | Accepted (2026-09-16) |
 | [0008](0008-single-custom-view-not-display-layout.md) | 合成ダッシュボードはDisplay Layoutではなく単一のカスタムビューで実装する | Accepted (2026-09-16) |
+| [0009](0009-rpi-os-trixie-cloudinit-just.md) | RPi 4BはRaspberry Pi OS Lite (64-bit, Trixie) + cloud-init、タスクランナーは`just` | Accepted (2026-09-17) |
+| [0010](0010-whisper-model-benchmark.md) | whisper.cppモデル選定の実測(tiny/base) | 実測完了、選定は人間の判断待ち (2026-09-19) |
+| [0011](0011-transcription-moves-to-macmini-role.md) | 文字起こし(whisper.cpp)をRPiからMac mini役の機体へ移す | Accepted (2026-09-19) |
 
 ## 土台にしているOpenSpeechMap自身のADR
 
