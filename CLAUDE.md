@@ -429,8 +429,15 @@ dwg7/kikimimi/
       モデルはmediumを暫定第一候補とする(最終確認は人間の判断待ち)。
       真のストリーミング処理化は今回のスコープ外とし、OpenSpeechMapの
       既存のセグメント単位パイプラインに従う方針(2026-09-19、ユーザー確認)
-- [ ] RPi→Mac mini役の機体へのセグメントファイル同期の仕組みの設計・実装
-      (rsync等。まだ着手していない)
+- [x] RPi→Mac mini役の機体へのセグメントファイル同期の仕組みを設計・実装・
+      実機検証(2026-09-19)。RPi側の録音先をtmpfs(SDカード非使用)にし、
+      作業用Macが`scripts/sync-segments.sh`(`just sync-segments`)で
+      rsync pull→`speechmap transcribe --skip-newest`を実行する方式。
+      CIFS/SMB共有は録音プロセスの堅牢性を落とすため見送った。
+      実機で録音→転送→文字起こしの一連を確認済み(NHK-FM北海道の実放送、
+      ジャズ番組を正しく転写)([ADR 0012](documents/decisions/0012-rsync-pull-over-tmpfs.md))。
+      **同期を定期実行するcron/launchdへの登録(常駐化)はまだ。人間の
+      確認を経てから**
 - [ ] 十勝岳関連の実ニュース音声での固有名詞転記精度の確認(これまでの
       テストは全て一般的な会話音声のみ)
 - [ ] Mac mini役の機体側のLLMエンドポイント構築 — 物理作業

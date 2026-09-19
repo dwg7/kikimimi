@@ -42,7 +42,9 @@ ssh:
     #!/usr/bin/env bash
     set -e
     : "${KIKIMIMI_RPI_HOST:?.envにKIKIMIMI_RPI_HOSTを設定してください}"
-    ssh "${KIKIMIMI_RPI_USER:-pi}@${KIKIMIMI_RPI_HOST}"
+    # mDNSは.localサフィックスが無いと解決できない(裸のホスト名では失敗する
+    # ことを2026-09-19の同期テストで確認)
+    ssh "${KIKIMIMI_RPI_USER:-pi}@${KIKIMIMI_RPI_HOST%.local}.local"
 
 # backup-sdcard: 上書き前に、実機の現在の内容を丸ごとバックアップする
 # (rpi-geoserver0のscripts/backup-sdcard.shを移植。2026-09-19時点で
@@ -66,3 +68,9 @@ configure-wifi device:
 # setup-macmini: Mac mini側のセットアップ(LLMエンドポイント準備 + locitorium stub)
 setup-macmini:
     ./scripts/setup-macmini.sh
+
+# sync-segments: RPiのtmpfsからセグメントをrsync pullし、新着分をtranscribe
+# (Mac mini役の機体上で実行する。定期実行させる場合はcron/launchdに登録する
+# 前に、まず単発で動作確認すること。 documents/decisions/0012-rsync-pull-over-tmpfs.md 参照)
+sync-segments:
+    ./scripts/sync-segments.sh

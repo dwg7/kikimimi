@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
-# RPi 4B side: RTL-SDR capture + whisper.cpp transcription only.
-# This machine does not run the lens (LLM) or series (detempus) stages, and it
-# never serves or displays anything itself — see
+# RPi 4B side: RTL-SDR capture only. It does NOT run whisper.cpp -- that
+# moved to the Mac mini role machine after real-hardware benchmarks showed
+# the RPi both too slow (small/medium models) and prone to thermal
+# throttling even on tiny. See documents/decisions/0010-whisper-model-benchmark.md
+# and documents/decisions/0011-transcription-moves-to-macmini-role.md.
+# This machine does not run the lens (LLM) or series (detempus) stages either,
+# and it never serves or displays anything itself — see
 # documents/decisions/0003-hardware-split-rpi-macmini.md and
 # documents/decisions/0004-single-output-path-github-pages.md for why.
 #
-# This script installs what `speechmap record --source sdr` and
-# `speechmap transcribe` need. It does not connect the dongle or start a
-# capture — that's a physical/operational step for a human (CLAUDE.md 4節).
+# This script installs what `speechmap record --source sdr` needs, and sets
+# up a tmpfs directory for it to record into so segments never touch the SD
+# card (documents/decisions/0012-rsync-pull-over-tmpfs.md). It does not
+# connect the dongle or start a capture — that's a physical/operational step
+# for a human (CLAUDE.md 4節).
 set -euo pipefail
 
 echo "== kikimimi: RPi 4B setup =="
@@ -18,7 +24,7 @@ if ! command -v apt >/dev/null 2>&1; then
 fi
 
 sudo apt update
-sudo apt install -y ffmpeg jq curl rtl-sdr git build-essential cmake
+sudo apt install -y ffmpeg jq curl rtl-sdr git
 
 echo
 echo "-- rtl-sdr check --"
@@ -30,25 +36,30 @@ else
 fi
 
 echo
-echo "-- whisper.cpp --"
-WHISPER_DIR="${WHISPER_DIR:-$HOME/whisper.cpp}"
-if [ -d "$WHISPER_DIR" ]; then
-  echo "Found existing checkout at $WHISPER_DIR, leaving it as-is."
+echo "-- tmpfs recording directory --"
+# speechmap record --out just needs a writable directory; pointing it at
+# tmpfs means audio segments are never written to the SD card. Sized well
+# above the realistic daily volume (~1GB/day at 60s segments -- see ADR
+# 0012) while staying a small fraction of this board's RAM.
+AUDIO_DIR="${KIKIMIMI_RPI_AUDIO_DIR:-/mnt/kikimimi-audio}"
+TMPFS_SIZE="${KIKIMIMI_TMPFS_SIZE:-1G}"
+sudo mkdir -p "$AUDIO_DIR"
+if mountpoint -q "$AUDIO_DIR"; then
+  echo "$AUDIO_DIR is already a mount point, leaving it as-is."
 else
-  git clone https://github.com/ggml-org/whisper.cpp "$WHISPER_DIR"
+  FSTAB_LINE="tmpfs $AUDIO_DIR tmpfs rw,nosuid,nodev,size=${TMPFS_SIZE},uid=$(id -u),gid=$(id -g) 0 0"
+  if grep -qF "$AUDIO_DIR" /etc/fstab 2>/dev/null; then
+    echo "$AUDIO_DIR already has an /etc/fstab entry, leaving it as-is."
+  else
+    echo "$FSTAB_LINE" | sudo tee -a /etc/fstab >/dev/null
+    echo "added to /etc/fstab: $FSTAB_LINE"
+  fi
+  sudo mount "$AUDIO_DIR"
+  echo "mounted tmpfs at $AUDIO_DIR ($TMPFS_SIZE, owned by $(id -un))"
 fi
-
-echo "Build it yourself once ARM NEON flags are confirmed for this board:"
-echo "  cmake -B $WHISPER_DIR/build -S $WHISPER_DIR"
-echo "  cmake --build $WHISPER_DIR/build --config Release -j"
-echo
-echo "Then fetch a small model (tiny or base -- see CLAUDE.md 2節 on why"
-echo "these are the ones expected to run faster than real time on this board):"
-echo "  bash $WHISPER_DIR/models/download-ggml-model.sh base"
-echo
-echo "Start the server by hand once you've picked a model, e.g.:"
-echo "  $WHISPER_DIR/build/bin/whisper-server -m $WHISPER_DIR/models/ggml-base.bin \\"
-echo "    --host 0.0.0.0 --port 8080"
+echo "Point speechmap record at it, with a retention window that fits in"
+echo "$TMPFS_SIZE, e.g.:"
+echo "  speechmap record --out $AUDIO_DIR --retention-hours 12 --max-gb 0.8 ..."
 
 echo
 echo "-- OpenSpeechMap CLI --"
@@ -66,9 +77,11 @@ cat <<'EOF'
 == Not done by this script (human steps) ==
 - Physically connect the RTL-SDR Blog V4 R828D dongle
 - Confirm reception with rtl_test / rtl_power on the intended frequency
-- Build whisper.cpp and pick tiny vs base after a real accuracy/speed check
-- Point `speechmap transcribe --whisper-url` at the whisper-server above, and
-  wire the output to wherever the Mac mini reads from (see setup-macmini.sh)
+- Start `speechmap record` pointed at the tmpfs directory above. Transcription
+  and everything downstream happens on the Mac mini role machine, which pulls
+  segments via `just sync-segments` (scripts/sync-segments.sh) -- see
+  documents/decisions/0011-transcription-moves-to-macmini-role.md and
+  documents/decisions/0012-rsync-pull-over-tmpfs.md
 
 Run `speechmap check` after installing the Python package to confirm what's
 still missing.

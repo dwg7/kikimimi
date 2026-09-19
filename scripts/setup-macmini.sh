@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Mac mini side: LLM endpoint (lens judging), locitorium stub (grounding
-# omitted, see documents/decisions/0002-omit-nominatim-grounding.md), and detempus
-# (series/anomaly detection). This machine does not touch the RTL-SDR or
-# whisper.cpp -- that's the RPi 4B's job (see setup-rpi.sh and
-# documents/decisions/0003-hardware-split-rpi-macmini.md).
+# Mac mini role machine side: whisper.cpp transcription (Metal backend), LLM
+# endpoint (lens judging), locitorium stub (grounding omitted, see
+# documents/decisions/0002-omit-nominatim-grounding.md), and detempus
+# (series/anomaly detection). This machine does not touch the RTL-SDR --
+# that's the RPi 4B's job (see setup-rpi.sh). It DOES run whisper.cpp, moved
+# here from the RPi after real-hardware benchmarks showed the RPi too slow
+# and thermally constrained (documents/decisions/0010-whisper-model-benchmark.md,
+# documents/decisions/0011-transcription-moves-to-macmini-role.md).
 set -euo pipefail
 
 echo "== kikimimi: Mac mini setup =="
@@ -13,7 +16,36 @@ if ! command -v brew >/dev/null 2>&1; then
   exit 1
 fi
 
-brew install ffmpeg jq curl uv git
+brew install ffmpeg jq curl uv git cmake rsync
+
+echo
+echo "-- whisper.cpp (Metal backend) --"
+# On this machine, NOT the RPi -- see the header comment above. Real-hardware
+# benchmarks (ADR 0011): small ~0.04x realtime, medium ~0.15x realtime with
+# Metal, both far faster and more accurate than anything usable on the RPi.
+WHISPER_DIR="${WHISPER_DIR:-$HOME/whisper.cpp}"
+if [ -d "$WHISPER_DIR" ]; then
+  echo "Found existing checkout at $WHISPER_DIR, leaving it as-is."
+else
+  git clone https://github.com/ggml-org/whisper.cpp "$WHISPER_DIR"
+fi
+echo "Build it (Metal framework found / Including METAL backend should appear"
+echo "in the cmake output):"
+echo "  cmake -B $WHISPER_DIR/build -S $WHISPER_DIR -DCMAKE_BUILD_TYPE=Release"
+echo "  cmake --build $WHISPER_DIR/build --config Release -j"
+echo
+echo "If the build fails with a broken-CLT-style error (headers not found,"
+echo "or a malformed .tbd link error from an unrelated newer SDK), see"
+echo "documents/decisions/0011-transcription-moves-to-macmini-role.md for the"
+echo "diagnosis and workaround (an explicit -DCMAKE_OSX_SYSROOT=... pin)."
+echo
+echo "Then fetch a model (medium is the current first candidate -- see ADR"
+echo "0011; small is the lighter fallback):"
+echo "  bash $WHISPER_DIR/models/download-ggml-model.sh medium"
+echo
+echo "Start the server by hand once you've picked a model:"
+echo "  $WHISPER_DIR/build/bin/whisper-server -m $WHISPER_DIR/models/ggml-medium.bin \\"
+echo "    --host 127.0.0.1 --port 30180"
 
 echo
 echo "-- OpenSpeechMap CLI --"
@@ -59,8 +91,13 @@ cat <<'EOF'
 - Point `speechmap lens` at this endpoint and at lenses/tokachi-lens, but only
   after a human has reviewed lenses/tokachi-lens/README.md's review checklist
   (CLAUDE.md 4節 -- lens content is not this script's call).
-- Receive transcripts from the RPi 4B (decide the transport: rsync, a shared
-  directory, scp on a timer -- not decided yet, see notes/observations.md).
+- Segments arrive from the RPi 4B via `just sync-segments`
+  (scripts/sync-segments.sh: rsync pull + `speechmap transcribe
+  --skip-newest`, decided in documents/decisions/0012-rsync-pull-over-tmpfs.md).
+  Run it once by hand to confirm it works end-to-end before registering it as
+  a recurring cron/launchd job -- that recurring registration is a human step,
+  not something this script or a later Claude Code session should do on its
+  own (see that ADR's "実装" section).
 
 Run `speechmap check` to confirm what's still missing before running a pass.
 EOF
