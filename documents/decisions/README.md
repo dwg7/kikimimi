@@ -17,6 +17,7 @@
 | [0011](0011-transcription-moves-to-macmini-role.md) | 文字起こし(whisper.cpp)をRPiからMac mini役の機体へ移す | Accepted (2026-09-19) |
 | [0012](0012-rsync-pull-over-tmpfs.md) | RPi→作業用Macのセグメント転送は、tmpfs録音 + rsync pullとする | Accepted (2026-09-19) |
 | [0013](0013-stay-on-fm-am-switch-rejected.md) | 対象波はNHK-FM北海道を継続、AMへの切り替えは見送り | Accepted (2026-09-20) |
+| [0014](0014-oneseg-tuner-sufficient-for-kikimimi.md) | kikimimiの用途では「ワンセグチューナーで十分」——yuisekiさんの助言と実測の整合 | Accepted (2026-09-20) |
 
 ## 土台にしているOpenSpeechMap自身のADR
 
