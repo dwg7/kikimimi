@@ -287,17 +287,20 @@ dwg7/kikimimi/
 ├── documents/
 │   └── decisions/               # なぜOpenSpeechMapの上に作るか、
 │                                  # なぜNominatimを外すか等のADR
-│                                  # (docs/ はGitHub Pages用に予約、使わない)
+│                                  # (docs/ はGitHub Pages公開用。ADR等はここに)
 ├── lenses/
 │   └── tokachi-lens/            # 十勝岳向けのレンズ(3〜4テキストファイル)
-├── openmct/                     # ビルドレス(CDNからOpen MCTを読み込む、
-│                                  # m3xx-fleet/sas0と同じ静的ページ構成)
+├── docs/                        # GitHub Pagesが配信する実体
+│                                  # (旧openmct/。ADR 0006の予約通り、
+│                                  # ADR 0016でここへ移設・mainブランチの
+│                                  # /docsをそのまま配信する設定にした)
 │   ├── index.html
 │   ├── style.css
 │   ├── plugins/                  # root type・単一のダッシュボードview
 │   │                              # (Display Layoutは使わない。ADR 0008)
-│   └── data/                     # プレビュー用ダミーデータ
-│                                  # (実運用ではspeechmap seriesの出力に置換)
+│   └── data/
+│       ├── live.json              # 実データ(sync-segments.shが60秒毎に更新)
+│       └── preview-fixture.json   # デザイン検討用の参考ダミーデータ
 ├── scripts/
 │   ├── setup-rpi.sh              # RPi 4B側(RTL-SDR + whisper.cpp)
 │   ├── setup-macmini.sh          # Mac mini側(LLMエンドポイント + locitorium stub)
@@ -363,7 +366,8 @@ dwg7/kikimimi/
       インストール済みだが、実機での動作確認はまだ)
 - [x] 実データへの接続(2026-09-20)。`scripts/lens-to-openmct.sh`で
       `speechmap lens`の`labeled.jsonl`と`speechmap series`の出力を
-      `openmct/data/live.json`に変換し、`kikimimi-provider.js`の
+      `docs/data/live.json`(当時は`openmct/data/live.json`。ADR 0016で
+      `docs/`へ移設)に変換し、`kikimimi-provider.js`の
       `DATA_URL`をこちらに切り替えた。検出0件(現在の実データ)・
       検出1件(架空のテストデータ)の両方をブラウザで実機確認済み。
       `preview-fixture.json`はデザイン検討用の参考資料として残すのみ

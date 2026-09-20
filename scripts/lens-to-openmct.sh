@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Convert speechmap lens's labeled.jsonl output into openmct/data/live.json,
-# the format openmct/plugins/kikimimi-provider.js fetches (DATA_URL).
+# Convert speechmap lens's labeled.jsonl output into docs/data/live.json,
+# the format docs/plugins/kikimimi-provider.js fetches (DATA_URL). `docs/`
+# is what GitHub Pages serves (documents/decisions/0006, 0016).
 #
 # Run on the Mac mini role machine, after `speechmap lens` has been run
 # against the accumulated transcripts. Does not run `speechmap lens` itself
@@ -14,7 +15,7 @@
 set -euo pipefail
 
 LENS_OUT="${1:-$HOME/kikimimi-lens-output}"
-OPENMCT_DATA_DIR="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../openmct/data" && pwd)}"
+OPENMCT_DATA_DIR="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../docs/data" && pwd)}"
 LIVE_JSON="$OPENMCT_DATA_DIR/live.json"
 
 LABELED="$LENS_OUT/labeled.jsonl"

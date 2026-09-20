@@ -47,7 +47,7 @@ LLM_URL="${KIKIMIMI_LLM_URL:-http://127.0.0.1:11434/v1}"
 LLM_MODEL="${KIKIMIMI_LLM_MODEL:-qwen2.5:14b}"
 LENS_DIR="${KIKIMIMI_LENS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lenses/tokachi-lens}"
 LENS_OUT="${KIKIMIMI_LENS_OUT:-$HOME/kikimimi-lens-output}"
-OPENMCT_DATA_DIR="${KIKIMIMI_OPENMCT_DATA_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/openmct/data}"
+OPENMCT_DATA_DIR="${KIKIMIMI_OPENMCT_DATA_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/docs/data}"
 LOCK_DIR="${TMPDIR:-/tmp}/kikimimi-sync-segments.lock"
 
 log() {

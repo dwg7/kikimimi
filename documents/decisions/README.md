@@ -19,6 +19,7 @@
 | [0013](0013-stay-on-fm-am-switch-rejected.md) | 対象波はNHK-FM北海道を継続、AMへの切り替えは見送り | Accepted (2026-09-20) |
 | [0014](0014-oneseg-tuner-sufficient-for-kikimimi.md) | kikimimiの用途では「ワンセグチューナーで十分」——yuisekiさんの助言と実測の整合 | Accepted (2026-09-20) |
 | [0015](0015-llm-endpoint-and-real-data-pipeline.md) | LLMエンドポイント構築と、lens→series→Open MCTの実データ経路の検証 | Accepted (2026-09-20) |
+| [0016](0016-publish-docs-via-github-pages.md) | `openmct/`を`docs/`へ移設し、GitHub Pagesで公開する | Accepted (2026-09-20) |
 
 ## 土台にしているOpenSpeechMap自身のADR
 
