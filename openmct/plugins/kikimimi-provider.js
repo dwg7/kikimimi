@@ -7,15 +7,16 @@
  * 頻度プロットはOpen MCT純正のPlot APIを使わず、自前SVGで描く
  * (dwg7内の複数プロジェクトでPlot APIの実績が不安定だったため。同ADR参照)。
  *
- * データソースは今のところ data/preview-fixture.json というプレビュー用の
- * ダミーデータ。実運用では、Mac mini側の `speechmap series` が書き出す
- * series.json(頻度)と `speechmap lens` が書き出す selected.jsonl(イベント)を
- * 同じ形に整形して置き換える想定(documents/decisions/0003, 0004参照)。
+ * データソースは data/live.json。scripts/lens-to-openmct.sh が
+ * Mac mini役の機体で speechmap lens の labeled.jsonl(イベント)と
+ * speechmap series の出力(頻度)を、この形に整形して書き出す
+ * (documents/decisions/0015参照)。data/preview-fixture.json は
+ * デザイン検討用のダミーデータとして残しているだけで、もう読み込まない。
  */
 (function () {
   var NAMESPACE = 'kikimimi';
   var ROOT_KEY = 'root';
-  var DATA_URL = 'data/preview-fixture.json';
+  var DATA_URL = 'data/live.json';
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
   var CATEGORY_LABEL_FALLBACK = 'その他';

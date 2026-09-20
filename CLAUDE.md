@@ -361,9 +361,15 @@ dwg7/kikimimi/
       決める。現状はSVG自前ロジックでの色分けを実装済み(既定の代替案)
 - [ ] Notebookオブジェクトの実際の作成手順の確認(プラグインは
       インストール済みだが、実機での動作確認はまだ)
-- [ ] 実データへの接続(`speechmap series`のseries.json、`selected.jsonl`を
-      `openmct/data/`が読む形に整形する変換ステップ。現状はプレビュー用
-      ダミーデータ`preview-fixture.json`)
+- [x] 実データへの接続(2026-09-20)。`scripts/lens-to-openmct.sh`で
+      `speechmap lens`の`labeled.jsonl`と`speechmap series`の出力を
+      `openmct/data/live.json`に変換し、`kikimimi-provider.js`の
+      `DATA_URL`をこちらに切り替えた。検出0件(現在の実データ)・
+      検出1件(架空のテストデータ)の両方をブラウザで実機確認済み。
+      `preview-fixture.json`はデザイン検討用の参考資料として残すのみ
+      ([ADR 0015](documents/decisions/0015-llm-endpoint-and-real-data-pipeline.md))。
+      **lens/seriesの定期実行への組み込み(`sync-segments.sh`統合等)は
+      まだ**
 - [x] RPi 4BのOS・タスクランナーの選定(Raspberry Pi OS Lite 64-bit Trixie
       + cloud-init、`just`)。kaga0の実績に準拠、rpi-geoserver0とはUnit Aの
       イメージバックアップ/一時転用について協調中
@@ -473,4 +479,9 @@ dwg7/kikimimi/
       具体的な局・周波数そのものの正式決定はまだ暫定のまま
 - [ ] 月寒からの受信可能性の全体像の把握(航空無線等のVHF帯が
       FMと同様に扱えるか、ハードウェア構成の限界を確認)——着手予定
-- [ ] Mac mini役の機体側のLLMエンドポイント構築 — 物理作業
+- [x] Mac mini役の機体側のLLMエンドポイント構築(2026-09-20)。
+      「物理作業」と思われていたが、実際には既に`ollama`導入・
+      Tanuki-8B/qwen2.5:14bダウンロード済みで、サーバー未起動だった
+      だけと判明。launchd常駐化(TCC問題をモデルの配置場所変更で
+      リモートのみで解決)まで完了
+      ([ADR 0015](documents/decisions/0015-llm-endpoint-and-real-data-pipeline.md))
