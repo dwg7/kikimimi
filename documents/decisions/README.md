@@ -16,6 +16,7 @@
 | [0010](0010-whisper-model-benchmark.md) | whisper.cppモデル選定の実測(tiny/base) | 実測完了、選定は人間の判断待ち (2026-09-19) |
 | [0011](0011-transcription-moves-to-macmini-role.md) | 文字起こし(whisper.cpp)をRPiからMac mini役の機体へ移す | Accepted (2026-09-19) |
 | [0012](0012-rsync-pull-over-tmpfs.md) | RPi→作業用Macのセグメント転送は、tmpfs録音 + rsync pullとする | Accepted (2026-09-19) |
+| [0013](0013-stay-on-fm-am-switch-rejected.md) | 対象波はNHK-FM北海道を継続、AMへの切り替えは見送り | Accepted (2026-09-20) |
 
 ## 土台にしているOpenSpeechMap自身のADR
 
