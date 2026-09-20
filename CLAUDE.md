@@ -367,9 +367,17 @@ dwg7/kikimimi/
       `DATA_URL`をこちらに切り替えた。検出0件(現在の実データ)・
       検出1件(架空のテストデータ)の両方をブラウザで実機確認済み。
       `preview-fixture.json`はデザイン検討用の参考資料として残すのみ
-      ([ADR 0015](documents/decisions/0015-llm-endpoint-and-real-data-pipeline.md))。
-      **lens/seriesの定期実行への組み込み(`sync-segments.sh`統合等)は
-      まだ**
+      ([ADR 0015](documents/decisions/0015-llm-endpoint-and-real-data-pipeline.md))
+- [x] lens/seriesの定期実行への組み込み(2026-09-20)。
+      `sync-segments.sh`(60秒間隔のlaunchd常駐ジョブ)にlens適用と
+      Open MCTライブデータ更新のステップを追加し、**録音→転送・
+      文字起こし・lens判定・series集計・Open MCT表示更新という経路
+      全体が人手を介さず60秒サイクルで回るようになった。** 副産物として
+      bash 3.2(macOS標準)に`mapfile`ビルトインが無いという移植性の
+      問題と、壊れたセグメントファイルの再発(今回は5個同時)を発見し、
+      毎tickの自動検知・隔離ロジックで解決した
+      ([ADR 0015](documents/decisions/0015-llm-endpoint-and-real-data-pipeline.md)
+      「sync-segments.shへの統合」節)
 - [x] RPi 4BのOS・タスクランナーの選定(Raspberry Pi OS Lite 64-bit Trixie
       + cloud-init、`just`)。kaga0の実績に準拠、rpi-geoserver0とはUnit Aの
       イメージバックアップ/一時転用について協調中
