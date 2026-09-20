@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Periodically commit and push docs/data/live.json, so the published GitHub
-# Pages dashboard (documents/decisions/0016-publish-docs-via-github-pages.md)
-# reflects roughly-current data.
+# Periodically commit and push docs/data/live.json and docs/data/health.json,
+# so the published GitHub Pages dashboard
+# (documents/decisions/0016-publish-docs-via-github-pages.md,
+# documents/decisions/0017-health-panel.md) reflects roughly-current data.
 #
 # Deliberately on its own timer, separate from sync-segments.sh's 60-second
 # cadence: pushing every 60s would spam the commit history for no benefit
-# (the goal is "roughly current", not real-time -- see that ADR's "影響"
+# (the goal is "roughly current", not real-time -- see ADR 0016's "影響"
 # section on this exact gap).
 #
-# Only ever touches docs/data/live.json. Any other pending local changes in
-# the repo (e.g. mid-edit ADR work) are left alone.
+# Only ever touches docs/data/{live,health}.json. Any other pending local
+# changes in the repo (e.g. mid-edit ADR work) are left alone.
 set -euo pipefail
 
 export PATH="/opt/homebrew/bin:$HOME/.local/bin:$PATH"
@@ -35,13 +36,14 @@ cd "$REPO_DIR"
 git fetch origin main
 git merge --ff-only origin/main
 
-git add docs/data/live.json
+git add docs/data/live.json docs/data/health.json
 
-if git diff --cached --quiet -- docs/data/live.json; then
-  log "no change to docs/data/live.json, nothing to publish"
+if git diff --cached --quiet -- docs/data/live.json docs/data/health.json; then
+  log "no change to docs/data/{live,health}.json, nothing to publish"
   exit 0
 fi
 
-git commit -m "docs: refresh live data ($(date -u +"%Y-%m-%dT%H:%M:%SZ"))" -- docs/data/live.json
+git commit -m "docs: refresh live+health data ($(date -u +"%Y-%m-%dT%H:%M:%SZ"))" \
+  -- docs/data/live.json docs/data/health.json
 git push origin main
-log "pushed live data update"
+log "pushed live+health data update"

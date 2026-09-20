@@ -115,4 +115,7 @@ uv run speechmap lens "$TRANSCRIPT_DIR" \
 log "refreshing Open MCT live data"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lens-to-openmct.sh" "$LENS_OUT" "$OPENMCT_DATA_DIR"
 
+log "refreshing health panel data"
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/update-health.sh" || log "update-health.sh failed, continuing anyway"
+
 log "done"

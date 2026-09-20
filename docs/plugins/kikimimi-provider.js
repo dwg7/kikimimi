@@ -12,11 +12,18 @@
  * speechmap series の出力(頻度)を、この形に整形して書き出す
  * (documents/decisions/0015参照)。data/preview-fixture.json は
  * デザイン検討用のダミーデータとして残しているだけで、もう読み込まない。
+ *
+ * 健全性パネルは data/health.json(scripts/update-health.shが書き出す、
+ * documents/decisions/0017参照)。個体のホスト名・IPは一切含めず、
+ * "RPi"・"Mac mini"という一般化したラベルのみで表示する
+ * (このダッシュボードは一般公開されているため)。取得に失敗しても
+ * ダッシュボード本体の表示は妨げない。
  */
 (function () {
   var NAMESPACE = 'kikimimi';
   var ROOT_KEY = 'root';
   var DATA_URL = 'data/live.json';
+  var HEALTH_URL = 'data/health.json';
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
   var CATEGORY_LABEL_FALLBACK = 'その他';
@@ -25,6 +32,12 @@
     return fetch(DATA_URL, { cache: 'no-store' }).then(function (r) {
       return r.json();
     });
+  }
+
+  function fetchHealth() {
+    return fetch(HEALTH_URL, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
   }
 
   function svgEl(tag, attrs) {
@@ -267,7 +280,41 @@
     container.appendChild(statCard('期間内の検出件数', String(events.length)));
   }
 
-  function renderDashboard(container, data) {
+  // 健全性パネル。値が無い項目(Mac miniの温度等)は静かに省く——
+  // 取得できない値を無理に埋めない。
+  function renderHealthPanel(container, health) {
+    if (!health || !health.machines || !health.machines.length) {
+      var empty = document.createElement('p');
+      empty.className = 'kikimimi-caption';
+      empty.textContent = '健全性データを取得できませんでした。';
+      container.appendChild(empty);
+      return;
+    }
+    var row = document.createElement('div');
+    row.className = 'kikimimi-lad-row';
+    health.machines.forEach(function (m) {
+      var parts = [];
+      if (m.temp_c != null) {
+        parts.push(m.temp_c.toFixed(1) + '℃');
+      }
+      if (m.load_1m != null) {
+        parts.push('負荷 ' + m.load_1m.toFixed(2));
+      }
+      if (m.recording) {
+        parts.push('録音: ' + (m.recording === 'active' ? '正常' : m.recording));
+      }
+      row.appendChild(statCard(m.label, parts.length ? parts.join(' / ') : '—'));
+    });
+    container.appendChild(row);
+    if (health.generated_at) {
+      var stamp = document.createElement('p');
+      stamp.className = 'kikimimi-caption';
+      stamp.textContent = '健全性データ取得: ' + formatDateTime(health.generated_at);
+      container.appendChild(stamp);
+    }
+  }
+
+  function renderDashboard(container, data, health) {
     container.innerHTML = '';
     var root = document.createElement('div');
     root.className = 'kikimimi-dashboard';
@@ -313,6 +360,15 @@
     tableSection.appendChild(tableBody);
     root.appendChild(tableSection);
 
+    var healthSection = document.createElement('div');
+    healthSection.className = 'kikimimi-panel';
+    var healthTitle = document.createElement('h2');
+    healthTitle.className = 'kikimimi-panel-title';
+    healthTitle.textContent = 'パイプラインの健全性';
+    healthSection.appendChild(healthTitle);
+    renderHealthPanel(healthSection, health);
+    root.appendChild(healthSection);
+
     var notebookSection = document.createElement('div');
     notebookSection.className = 'kikimimi-panel';
     notebookSection.innerHTML =
@@ -356,9 +412,9 @@
         if (!container) {
           return;
         }
-        fetchData().then(function (data) {
+        Promise.all([fetchData(), fetchHealth()]).then(function (results) {
           if (container) {
-            renderDashboard(container, data);
+            renderDashboard(container, results[0], results[1]);
           }
         });
       }
