@@ -87,6 +87,18 @@ uninstall-sync-timer:
 sync-timer-status:
     ./scripts/install-sync-timer.sh status
 
+# install-publish-timer: docs/data/live.jsonの定期push(既定30分間隔)をlaunchdに常駐登録する
+install-publish-timer:
+    ./scripts/install-publish-timer.sh install
+
+# uninstall-publish-timer: 定期pushの常駐登録を解除する
+uninstall-publish-timer:
+    ./scripts/install-publish-timer.sh uninstall
+
+# publish-timer-status: 定期pushの常駐登録の状態とログ末尾を表示する
+publish-timer-status:
+    ./scripts/install-publish-timer.sh status
+
 # install-record-service: RPi実機でspeechmap recordをsystemdサービス化する
 # (このJustfileはMac側で動かす前提なので、scripts/install-record-service.sh
 # 本体をssh越しに転送・実行する。周波数・ゲイン等は.envのKIKIMIMI_FREQ等を使用)

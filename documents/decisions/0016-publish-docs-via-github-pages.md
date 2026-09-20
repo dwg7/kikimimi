@@ -56,6 +56,49 @@ m3xx-fleetの実際の設定を`gh api repos/dwg7/m3xx-fleet/pages`で確認し�
   読み込む前提のまま([ADR 0008](0008-single-custom-view-not-display-layout.md))。
   ビルドレスという既存方針とも整合する
 
+## 追記: 公開URLの実機確認と、定期push化(2026-09-20)
+
+Pages有効化後、`https://dwg7.github.io/kikimimi/`が
+`https://dwg7.unopengis.org/kikimimi/`へ301リダイレクトされ、そこで
+実際にダッシュボードが表示されることをブラウザで実機確認した(パスは
+正しく維持されている——ブラウザのタブ一覧表示が簡略化されて見えた
+だけで、実際の`window.location.href`では確認済み)。
+
+**ユーザーの依頼を受け、`docs/data/live.json`を30分間隔で自動push
+する`scripts/publish-live-data.sh`+`scripts/install-publish-timer.sh`を
+追加した。** `sync-segments.sh`の60秒サイクルとは別のタイマーにした
+理由は、60秒毎にpushするとcommit履歴が意味なく肥大化するため
+(「概ね最新」で十分、というのがそもそもの要件)。push前に`git fetch`+
+`git merge --ff-only`を挟み、他所(このセッションの実行環境等)からの
+pushとの競合を検知できるようにした。
+
+### 発見:作業用Mac側のgitメール設定が誤った形式だった
+
+定期push設定の準備中、作業用Macのkikimimiリポジトリの`git config
+user.email`が**`hfu@users.noreply.github.com`(IDプレフィックス無し)**に
+なっていることに気づいた。これはユーザーのグローバル指示
+(`~/.claude/CLAUDE.md`)で明示的に禁止されている形式で、過去に
+別アカウント(現在のhandygeospatial)への誤帰属が実際に起きている
+(2026-09-06、dwg7/m3xx-fleet)。**自動pushを設定する前に気づけたのは
+幸運だった。** リポジトリローカルの設定を`18297+hfu@users.noreply.github.com`
+に修正した(グローバル設定は変更していない)。
+
+### 発見:作業用Mac側のリポジトリがoriginから11コミット遅れていた
+
+同じ準備中、作業用Macの`~/kikimimi`が`origin/main`から11コミット遅れており、
+しかも作業ツリーに残っていた「変更」は**実際には古い内容**(直前の
+`docs/`リネーム編集をscpし忘れていたことが原因)だと判明した。これまで
+このセッションでの反映作業は、変更したファイルを都度`scp`する方式で
+行っていたが、**この方式は「1つでもscpし忘れると気づかないまま
+古い状態で動き続ける」というリスクを常に抱えていた**、ということが
+今回はっきりした。
+
+**対処**: `git reset --hard origin/main`で作業用Macをoriginと完全に一致させ、
+リネーム前の残骸(`openmct/`ディレクトリ)を削除した。**今後、作業用Macへの
+反映は`scp`の代わりに`git fetch && git reset --hard origin/main`(または
+`git pull --ff-only`)を使う方が、更新漏れを構造的に防げる。** 今回のADR
+実装だけは元々`scp`で進めていたため、この教訓を活かすのは次回以降になる。
+
 ## 検討した代替案
 
 - **gh-pagesブランチを使う**: 却下。m3xx-fleetも使っておらず、
