@@ -126,6 +126,24 @@ uninstall-record-service:
     HOST="${KIKIMIMI_RPI_USER:-pi}@${KIKIMIMI_RPI_HOST%.local}.local"
     ssh "$HOST" "bash -s uninstall" < scripts/install-record-service.sh
 
+# run-disaster-lens: ja-radio-disaster(gate無し)を単発実行する
+# (検証用シグナル。docs/への公開経路には含まれない。
+# documents/decisions/0018-parallel-validation-lens.md 参照)
+run-disaster-lens:
+    ./scripts/run-disaster-lens.sh
+
+# install-disaster-lens-timer: run-disaster-lensをlaunchdに常駐登録する(既定10分間隔)
+install-disaster-lens-timer:
+    ./scripts/install-disaster-lens-timer.sh install
+
+# uninstall-disaster-lens-timer: 常駐登録を解除する
+uninstall-disaster-lens-timer:
+    ./scripts/install-disaster-lens-timer.sh uninstall
+
+# disaster-lens-status: 常駐登録の状態とログ末尾を表示する
+disaster-lens-status:
+    ./scripts/install-disaster-lens-timer.sh status
+
 # record-service-status: RPi実機のspeechmap recordサービスの状態を表示する
 record-service-status:
     #!/usr/bin/env bash

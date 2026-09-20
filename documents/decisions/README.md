@@ -21,6 +21,7 @@
 | [0015](0015-llm-endpoint-and-real-data-pipeline.md) | LLMエンドポイント構築と、lens→series→Open MCTの実データ経路の検証 | Accepted (2026-09-20) |
 | [0016](0016-publish-docs-via-github-pages.md) | `openmct/`を`docs/`へ移設し、GitHub Pagesで公開する | Accepted (2026-09-20) |
 | [0017](0017-health-panel.md) | ダッシュボードに、RPi・Mac miniの健全性パネルを追加する | Accepted (2026-09-20) |
+| [0018](0018-parallel-validation-lens.md) | `ja-radio-disaster`を独立タイマーで並行稼働させ、判定パイプラインの生存確認とする | Accepted (2026-09-20) |
 
 ## 土台にしているOpenSpeechMap自身のADR
 
