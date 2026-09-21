@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Convert speechmap lens's labeled.jsonl output into docs/data/live.json,
-# the format docs/plugins/kikimimi-provider.js fetches (DATA_URL). `docs/`
-# is what GitHub Pages serves (documents/decisions/0006, 0016).
+# Convert speechmap lens's labeled.jsonl output into a docs/data/*.json file
+# in the format docs/plugins/kikimimi-provider.js fetches. `docs/` is what
+# GitHub Pages serves (documents/decisions/0006, 0016).
 #
 # Run on the Mac mini role machine, after `speechmap lens` has been run
 # against the accumulated transcripts. Does not run `speechmap lens` itself
@@ -12,11 +12,19 @@
 # count"), which is expected to be the normal state for a rare-event volcano
 # monitor, so this script produces series: [] itself in that case rather than
 # treating it as a failure.
+#
+# Generalized (documents/decisions/0019) to take the boolean field to select
+# on and the output filename as extra args, so scripts/run-disaster-lens.sh
+# can reuse it for the ja-radio-disaster panel (data/live-disaster.json)
+# without duplicating this conversion logic. Existing callers that pass only
+# the first two args keep the original tokachi-lens behavior unchanged.
 set -euo pipefail
 
 LENS_OUT="${1:-$HOME/kikimimi-lens-output}"
 OPENMCT_DATA_DIR="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../docs/data" && pwd)}"
-LIVE_JSON="$OPENMCT_DATA_DIR/live.json"
+SELECT_FIELD="${3:-is_tokachidake}"
+OUT_FILENAME="${4:-live.json}"
+LIVE_JSON="$OPENMCT_DATA_DIR/$OUT_FILENAME"
 
 LABELED="$LENS_OUT/labeled.jsonl"
 if [ ! -f "$LABELED" ]; then
@@ -24,10 +32,10 @@ if [ ! -f "$LABELED" ]; then
   exit 1
 fi
 
-EVENTS=$(jq -sc 'map(select(.is_tokachidake == true))' "$LABELED")
+EVENTS=$(jq -sc --arg field "$SELECT_FIELD" 'map(select(.[$field] == true))' "$LABELED")
 EVENT_COUNT=$(echo "$EVENTS" | jq 'length')
 
-echo "kikimimi: $EVENT_COUNT tokachidake-related record(s) in $LABELED"
+echo "kikimimi: $EVENT_COUNT $SELECT_FIELD record(s) in $LABELED"
 
 if [ "$EVENT_COUNT" -eq 0 ]; then
   SERIES='[]'
@@ -38,7 +46,7 @@ else
   rm -rf "$SERIES_OUT"
   (cd "$OSM_DIR" && uv run speechmap series "$LABELED" \
     --out "$SERIES_OUT" \
-    --select ".is_tokachidake" \
+    --select ".$SELECT_FIELD" \
     --key-field "" \
     --bucket hour)
   # speechmap series' own format is {series: [{key, t: [...], value: [...], ...}]}

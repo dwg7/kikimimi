@@ -18,12 +18,19 @@
  * "RPi"・"Mac mini"という一般化したラベルのみで表示する
  * (このダッシュボードは一般公開されているため)。取得に失敗しても
  * ダッシュボード本体の表示は妨げない。
+ *
+ * 「注意報・警報など(参考シグナル)」パネルは data/live-disaster.json
+ * (scripts/run-disaster-lens.shが10分間隔で書き出す、
+ * documents/decisions/0018・0019参照)。ja-radio-disasterはgate.txtを
+ * 持たず十勝岳に限定しないため、本体の検出イベント一覧より広く・
+ * ノイズも多く反応する。取得失敗時・0件時は静かに空表示にする。
  */
 (function () {
   var NAMESPACE = 'kikimimi';
   var ROOT_KEY = 'root';
   var DATA_URL = 'data/live.json';
   var HEALTH_URL = 'data/health.json';
+  var DISASTER_URL = 'data/live-disaster.json';
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
   var CATEGORY_LABEL_FALLBACK = 'その他';
@@ -36,6 +43,12 @@
 
   function fetchHealth() {
     return fetch(HEALTH_URL, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+
+  function fetchDisaster() {
+    return fetch(DISASTER_URL, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
   }
@@ -205,7 +218,8 @@
     return frag;
   }
 
-  function renderEventTable(container, events) {
+  function renderEventTable(container, events, opts) {
+    opts = opts || {};
     if (!events || events.length === 0) {
       var empty = document.createElement('p');
       empty.className = 'kikimimi-caption';
@@ -216,6 +230,9 @@
     var sorted = events.slice().sort(function (a, b) {
       return new Date(b.t) - new Date(a.t);
     });
+    if (opts.limit) {
+      sorted = sorted.slice(0, opts.limit);
+    }
     var table = document.createElement('table');
     table.className = 'kikimimi-table';
     var thead = document.createElement('thead');
@@ -314,7 +331,23 @@
     }
   }
 
-  function renderDashboard(container, data, health) {
+  var DISASTER_EVENT_LIMIT = 20;
+
+  function renderDisasterPanel(container, disaster) {
+    var events = disaster && disaster.events;
+    var caption = document.createElement('p');
+    caption.className = 'kikimimi-caption';
+    caption.textContent =
+      '十勝岳に限定しない、災害関連の話題全般に反応する検証用レンズ(ja-radio-disaster)による参考情報。' +
+      '本体の検出条件より広く反応するため、無関係な話題の誤検出を含む。直近' + DISASTER_EVENT_LIMIT + '件まで表示。';
+    container.appendChild(caption);
+    var tableWrap = document.createElement('div');
+    tableWrap.className = 'kikimimi-table-wrap';
+    renderEventTable(tableWrap, events, { limit: DISASTER_EVENT_LIMIT });
+    container.appendChild(tableWrap);
+  }
+
+  function renderDashboard(container, data, health, disaster) {
     container.innerHTML = '';
     var root = document.createElement('div');
     root.className = 'kikimimi-dashboard';
@@ -359,6 +392,15 @@
     renderEventTable(tableBody, data.events);
     tableSection.appendChild(tableBody);
     root.appendChild(tableSection);
+
+    var disasterSection = document.createElement('div');
+    disasterSection.className = 'kikimimi-panel';
+    var disasterTitle = document.createElement('h2');
+    disasterTitle.className = 'kikimimi-panel-title';
+    disasterTitle.textContent = '注意報・警報など(参考シグナル)';
+    disasterSection.appendChild(disasterTitle);
+    renderDisasterPanel(disasterSection, disaster);
+    root.appendChild(disasterSection);
 
     var healthSection = document.createElement('div');
     healthSection.className = 'kikimimi-panel';
@@ -412,9 +454,9 @@
         if (!container) {
           return;
         }
-        Promise.all([fetchData(), fetchHealth()]).then(function (results) {
+        Promise.all([fetchData(), fetchHealth(), fetchDisaster()]).then(function (results) {
           if (container) {
-            renderDashboard(container, results[0], results[1]);
+            renderDashboard(container, results[0], results[1], results[2]);
           }
         });
       }
