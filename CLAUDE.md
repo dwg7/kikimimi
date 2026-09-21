@@ -498,6 +498,20 @@ dwg7/kikimimi/
       という裏付けを独立した経路で得た。出力は`docs/`の外
       (`~/kikimimi-disaster-lens-output`)に留め、公開経路には含めていない
       ([ADR 0018](documents/decisions/0018-parallel-validation-lens.md))
+- [x] `ja-radio-disaster`の判定結果をダッシュボードの参考パネルとして
+      公開する(2026-09-21、ユーザーの依頼「注意報・警報についての
+      パネルを加える」)。`scripts/lens-to-openmct.sh`を汎用化
+      (判定フィールド名・出力ファイル名を引数化)し、
+      `docs/data/live-disaster.json`を新規に公開。ダッシュボードに
+      「注意報・警報など(参考シグナル)」パネル(直近20件のイベント
+      一覧)を追加。実機で生成した実データ(台風25号関連の警報・注意報が
+      中心、少数の誤検出を含む)をブラウザで表示確認してからpush。
+      副産物として、`sync-segments.sh`・`run-disaster-lens.sh`の
+      相対パス起動時のバグ(`OSM_DIR`へ`cd`した後に`BASH_SOURCE[0]`から
+      兄弟スクリプトの場所を再計算していたため、`./scripts/....sh`の
+      ような相対パス起動で壊れる。launchd常駐分は絶対パス起動のため
+      無事だった)も発見・修正した
+      ([ADR 0019](documents/decisions/0019-publish-disaster-lens-panel.md))
 - [x] 対象波(AM/FM)の最終決定(2026-09-20)。NHKラジオが2026年3月に
       3波(第1・第2・FM)から2波(NHK AM・NHK FM)へ再編されたことを知り、
       「報道量密度で有利そうなAMへ切り替えるべきか」を検討した。実機で
