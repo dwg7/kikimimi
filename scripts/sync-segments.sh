@@ -22,9 +22,13 @@ set -euo pipefail
 # Make this script self-sufficient regardless of who invokes it.
 export PATH="/opt/homebrew/bin:$HOME/.local/bin:$PATH"
 
+# Resolved once, before anything below `cd`s elsewhere (into $OSM_DIR) --
+# BASH_SOURCE[0] is only reliably resolvable relative to the original cwd.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # `just` normally loads .env for us (set dotenv-load), but launchd/cron call
 # this script directly, so load it here too if it hasn't been already.
-KIKIMIMI_ENV_FILE="${KIKIMIMI_ENV_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env}"
+KIKIMIMI_ENV_FILE="${KIKIMIMI_ENV_FILE:-$SCRIPT_DIR/../.env}"
 if [ -z "${KIKIMIMI_RPI_HOST:-}" ] && [ -f "$KIKIMIMI_ENV_FILE" ]; then
   set -a
   # shellcheck disable=SC1090
@@ -45,9 +49,9 @@ LANGUAGE="${KIKIMIMI_LANGUAGE:-ja}"
 OSM_DIR="${OSM_DIR:-$HOME/OpenSpeechMap}"
 LLM_URL="${KIKIMIMI_LLM_URL:-http://127.0.0.1:11434/v1}"
 LLM_MODEL="${KIKIMIMI_LLM_MODEL:-qwen2.5:14b}"
-LENS_DIR="${KIKIMIMI_LENS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lenses/tokachi-lens}"
+LENS_DIR="${KIKIMIMI_LENS_DIR:-$SCRIPT_DIR/../lenses/tokachi-lens}"
 LENS_OUT="${KIKIMIMI_LENS_OUT:-$HOME/kikimimi-lens-output}"
-OPENMCT_DATA_DIR="${KIKIMIMI_OPENMCT_DATA_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/docs/data}"
+OPENMCT_DATA_DIR="${KIKIMIMI_OPENMCT_DATA_DIR:-$SCRIPT_DIR/../docs/data}"
 LOCK_DIR="${TMPDIR:-/tmp}/kikimimi-sync-segments.lock"
 
 log() {
@@ -113,9 +117,9 @@ uv run speechmap lens "$TRANSCRIPT_DIR" \
   --llm-url "$LLM_URL"
 
 log "refreshing Open MCT live data"
-"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lens-to-openmct.sh" "$LENS_OUT" "$OPENMCT_DATA_DIR"
+"$SCRIPT_DIR/lens-to-openmct.sh" "$LENS_OUT" "$OPENMCT_DATA_DIR"
 
 log "refreshing health panel data"
-"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/update-health.sh" || log "update-health.sh failed, continuing anyway"
+"$SCRIPT_DIR/update-health.sh" || log "update-health.sh failed, continuing anyway"
 
 log "done"
