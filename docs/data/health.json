@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-09-24T05:15:26Z",
+  "generated_at": "2026-09-24T05:44:27Z",
   "machines": [
     {
       "label": "RPi",
-      "temp_c": 68.1,
-      "load_1m": 0.25,
+      "temp_c": 67.2,
+      "load_1m": 0.28,
       "recording": "inactive"
     },
     {
       "label": "Mac mini",
       "temp_c": null,
-      "load_1m": 1.72,
+      "load_1m": 1.39,
       "recording": null
     }
   ]
