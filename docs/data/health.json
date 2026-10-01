@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T20:50:12Z",
+  "generated_at": "2026-10-01T21:20:14Z",
   "machines": [
     {
       "label": "RPi",
@@ -10,7 +10,7 @@
     {
       "label": "Mac mini",
       "temp_c": null,
-      "load_1m": 2.78,
+      "load_1m": 2.94,
       "recording": null
     }
   ]
