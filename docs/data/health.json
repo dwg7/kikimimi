@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-16T16:42:23Z",
+  "generated_at": "2026-10-16T17:11:56Z",
   "machines": [
     {
       "label": "RPi",
-      "temp_c": 58.4,
-      "load_1m": 0.10,
+      "temp_c": 57.4,
+      "load_1m": 0.50,
       "recording": "inactive"
     },
     {
